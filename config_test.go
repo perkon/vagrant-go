@@ -9,7 +9,7 @@ import (
 func TestDefaultBinaryName(t *testing.T) {
 	t.Parallel()
 
-	assert.Equal(t, defaultBinaryName, "vagrant")
+	assert.Equal(t, "vagrant", defaultBinaryName)
 }
 
 func TestDefaultConfig(t *testing.T) {
@@ -17,5 +17,5 @@ func TestDefaultConfig(t *testing.T) {
 
 	config := DefaultConfig()
 	require.NotNil(t, config)
-	assert.Equal(t, config.BinaryName, defaultBinaryName)
+	assert.Equal(t, defaultBinaryName, config.BinaryName)
 }

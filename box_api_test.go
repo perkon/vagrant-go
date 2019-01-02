@@ -13,10 +13,7 @@ func TestBoxApiList(t *testing.T) {
 		"with no vagrant boxes available, it returns empty slice",
 		func(t *testing.T) {
 			boxAPI := &boxAPI{
-				client: testClient(
-					t,
-					emptyCommandRun,
-				),
+				client: emptyTestClient(t),
 			}
 
 			boxes, err := boxAPI.List()
@@ -29,7 +26,7 @@ func TestBoxApiList(t *testing.T) {
 	t.Run(
 		"with 1 vagrant box available, it returns slice of 1 box",
 		func(t *testing.T) {
-			singleBoxCommandRunFunc := func(cmd string, args ...string) ([]byte, error) {
+			boxCommandRunFunc := func(cmd string, args ...string) ([]byte, error) {
 				output := `
 1546015529,,ui,info,my-debian (libvirt%!(VAGRANT_COMMA) 0)
 1546015529,,box-name,my-debian
@@ -42,7 +39,8 @@ func TestBoxApiList(t *testing.T) {
 			boxAPI := &boxAPI{
 				client: testClient(
 					t,
-					singleBoxCommandRunFunc,
+					boxCommandRunFunc,
+					emptyLookPathFunc,
 				),
 			}
 
@@ -51,16 +49,16 @@ func TestBoxApiList(t *testing.T) {
 			require.NoError(t, err)
 			assert.Len(t, boxes, 1)
 
-			assert.Equal(t, boxes[0].Name, "my-debian")
-			assert.Equal(t, boxes[0].Provider, "libvirt")
-			assert.Equal(t, boxes[0].Version, "1.2.3")
+			assert.Equal(t, "my-debian", boxes[0].Name)
+			assert.Equal(t, "libvirt", boxes[0].Provider)
+			assert.Equal(t, "1.2.3", boxes[0].Version)
 		},
 	)
 
 	t.Run(
 		"with 3 vagrant boxes available, it returns slice of 3 boxes",
 		func(t *testing.T) {
-			singleBoxCommandRunFunc := func(cmd string, args ...string) ([]byte, error) {
+			boxCommandRunFunc := func(cmd string, args ...string) ([]byte, error) {
 				output := `
 1546015529,,ui,info,my-debian (libvirt%!(VAGRANT_COMMA) 0)
 1546015529,,box-name,my-debian
@@ -81,7 +79,8 @@ func TestBoxApiList(t *testing.T) {
 			boxAPI := &boxAPI{
 				client: testClient(
 					t,
-					singleBoxCommandRunFunc,
+					boxCommandRunFunc,
+					emptyLookPathFunc,
 				),
 			}
 
@@ -90,17 +89,17 @@ func TestBoxApiList(t *testing.T) {
 			require.NoError(t, err)
 			assert.Len(t, boxes, 3)
 
-			assert.Equal(t, boxes[0].Name, "my-debian")
-			assert.Equal(t, boxes[0].Provider, "libvirt")
-			assert.Equal(t, boxes[0].Version, "1.2.3")
+			assert.Equal(t, "my-debian", boxes[0].Name)
+			assert.Equal(t, "libvirt", boxes[0].Provider)
+			assert.Equal(t, "1.2.3", boxes[0].Version)
 
-			assert.Equal(t, boxes[1].Name, "my-vbox-debian")
-			assert.Equal(t, boxes[1].Provider, "virtualbox")
-			assert.Equal(t, boxes[1].Version, "1.2.4")
+			assert.Equal(t, "my-vbox-debian", boxes[1].Name)
+			assert.Equal(t, "virtualbox", boxes[1].Provider)
+			assert.Equal(t, "1.2.4", boxes[1].Version)
 
-			assert.Equal(t, boxes[2].Name, "my-vmware-debian")
-			assert.Equal(t, boxes[2].Provider, "vmware")
-			assert.Equal(t, boxes[2].Version, "1.2.5")
+			assert.Equal(t, "my-vmware-debian", boxes[2].Name)
+			assert.Equal(t, "vmware", boxes[2].Provider)
+			assert.Equal(t, "1.2.5", boxes[2].Version)
 		},
 	)
 }

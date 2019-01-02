@@ -2,12 +2,11 @@ package vagrant_go
 
 import (
 	"github.com/palantir/stacktrace"
-	"os/exec"
 	"strings"
 )
 
 type Client struct {
-	config         *Config
+	Config         *Config
 	commandRunFunc func(cmd string, args ...string) ([]byte, error)
 	Box            BoxAPI
 }
@@ -15,16 +14,20 @@ type Client struct {
 func NewClient(
 	config *Config,
 	commandRunFunc func(cmd string, args ...string) ([]byte, error),
+	lookPathFunc func(file string) (string, error),
 ) (*Client, error) {
 	clientConfig := DefaultConfig()
 
-	if config != nil {
-		if len(config.BinaryName) > 0 {
-			clientConfig.BinaryName = config.BinaryName
-		}
+	if config != nil && len(config.BinaryName) > 0 {
+		clientConfig.BinaryName = config.BinaryName
 	}
 
-	_, err := exec.LookPath(clientConfig.BinaryName)
+	clientLookPathFunc := realLookPathFunc
+	if lookPathFunc != nil {
+		clientLookPathFunc = lookPathFunc
+	}
+
+	_, err := clientLookPathFunc(clientConfig.BinaryName)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -33,13 +36,13 @@ func NewClient(
 		)
 	}
 
-	clientCommandRunFunc := realCommandFunc
+	clientCommandRunFunc := realCommandRunFunc
 	if commandRunFunc != nil {
 		clientCommandRunFunc = commandRunFunc
 	}
 
 	client := &Client{
-		config:         clientConfig,
+		Config:         clientConfig,
 		commandRunFunc: clientCommandRunFunc,
 	}
 
@@ -59,13 +62,13 @@ func (c *Client) executeVagrantCommand(args ...string) ([]*vagrantOutputLine, er
 		cmdArgs = append(cmdArgs, arg)
 	}
 
-	output, err := c.commandRunFunc(c.config.BinaryName, cmdArgs...)
+	output, err := c.commandRunFunc(c.Config.BinaryName, cmdArgs...)
 	return c.parseMachineReadableOutput(string(output)), err
 
 }
 
 func (c *Client) parseMachineReadableOutput(output string) []*vagrantOutputLine {
-	var vagrantOutputLines []*vagrantOutputLine
+	vagrantOutputLines := []*vagrantOutputLine{}
 
 	output = strings.Replace(output, `\n`, "\n", -1)
 	outputLines := strings.Split(output, "\n")

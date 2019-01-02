@@ -47,13 +47,13 @@ func (api *boxAPI) List() ([]*Box, error) {
 				)
 			}
 
-			name = line.data
+			name = line.data[0]
 			provider = ""
 			version = ""
 		case "box-provider":
-			provider = line.data
+			provider = line.data[0]
 		case "box-version":
-			version = line.data
+			version = line.data[0]
 		}
 	}
 
