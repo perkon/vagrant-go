@@ -10,7 +10,7 @@ func TestBoxApiList(t *testing.T) {
 	t.Parallel()
 
 	t.Run(
-		"with no vagrant boxes available",
+		"with no vagrant boxes available, it returns empty slice",
 		func(t *testing.T) {
 			boxAPI := &boxAPI{
 				client: testClient(
@@ -27,7 +27,7 @@ func TestBoxApiList(t *testing.T) {
 	)
 
 	t.Run(
-		"with 1 vagrant box available",
+		"with 1 vagrant box available, it returns slice of 1 box",
 		func(t *testing.T) {
 			singleBoxCommandRunFunc := func(cmd string, args ...string) ([]byte, error) {
 				output := `
@@ -58,7 +58,7 @@ func TestBoxApiList(t *testing.T) {
 	)
 
 	t.Run(
-		"with 3 vagrant boxes available",
+		"with 3 vagrant boxes available, it returns slice of 3 boxes",
 		func(t *testing.T) {
 			singleBoxCommandRunFunc := func(cmd string, args ...string) ([]byte, error) {
 				output := `
