@@ -16,7 +16,8 @@ type vagrantOutputLine struct {
 }
 
 func vagrantOutputLineFromString(str string) *vagrantOutputLine {
-	splitLines := strings.SplitN(strings.TrimSpace(str), ",", 4)
+	trimmedStr := strings.TrimSpace(str)
+	splitLines := strings.SplitN(trimmedStr, ",", 4)
 
 	//noinspection GoPreferNilSlice
 	vagrantLines := []string{}
