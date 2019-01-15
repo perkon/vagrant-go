@@ -1,12 +1,17 @@
-sudo: true
+sudo: false
 language: go
 go:
-  - "1.10.x"
-  - "1.11.x"
-  - master
+  - 1.11.x
+env:
+  - GO111MODULE=on
+git:
+  depth: 1
+notifications:
+  email: false
 # NOTE: Create fake `vagrant` binary
-install:
+before_script:
   - sudo apt update
   - sudo apt install -y vagrant
   - which vagrant
-script: go test -v ./...
+script:
+  - go test -v ./...
