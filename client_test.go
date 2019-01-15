@@ -8,11 +8,11 @@ import (
 )
 
 func TestNewClient(t *testing.T) {
-	t.Parallel()
-
 	t.Run(
 		"with nil `config`, `commandRunFunc` and `lookPathFunc` given, it uses default config and probably `realCommandRunFunc` and `realLookPathFunc`",
 		func(t *testing.T) {
+			t.Parallel()
+
 			client, err := NewClient(nil, nil, nil)
 			require.NoError(t, err)
 
@@ -24,14 +24,66 @@ func TestNewClient(t *testing.T) {
 			assert.NotNil(t, client.Global)
 		},
 	)
+
+	t.Run(
+		"with 'config.BinaryName' = vagrant123, it uses provided 'BinaryName'",
+		func(t *testing.T) {
+			t.Parallel()
+
+			config := DefaultConfig()
+			config.BinaryName = "vagrant123"
+
+			lookPathFunc := func(binaryName string) (string, error) {
+				return "/tmp/vagrant123", nil
+			}
+
+			client, err := NewClient(config, nil, lookPathFunc)
+			require.NoError(t, err)
+
+			assert.NotNil(t, client)
+			assert.Equal(t, "vagrant123", client.Config.BinaryName)
+			assert.NotNil(t, client.commandRunFunc)
+
+			assert.NotNil(t, client.Box)
+			assert.NotNil(t, client.Global)
+		},
+	)
+
+	t.Run(
+		"with 'clientLookPathFunc' returning an error, it returns error that 'config.BinaryName' is not found",
+		func(t *testing.T) {
+			t.Parallel()
+
+			config := DefaultConfig()
+			config.BinaryName = "vagrant123"
+
+			isLookPathFuncCalled := false
+
+			clientLookPathFunc := func(binaryName string) (string, error) {
+				assert.Equal(t, "vagrant123", binaryName)
+				isLookPathFuncCalled = true
+				return "/tmp/example", errors.New("fake error")
+			}
+
+			client, err := NewClient(
+				config,
+				nil,
+				clientLookPathFunc,
+			)
+			assert.Error(t, err, "fake error")
+
+			assert.Nil(t, client)
+			assert.True(t, isLookPathFuncCalled)
+		},
+	)
 }
 
 func TestExecuteVagrantCommand(t *testing.T) {
-	t.Parallel()
-
 	t.Run(
 		"when there's no command execution error, it executes command with given 'args' and returns parsed machine readable output and no error",
 		func(t *testing.T) {
+			t.Parallel()
+
 			client := emptyTestClient(t)
 			isCommandRunCalled := false
 			args := []string{"version"}
@@ -61,6 +113,8 @@ func TestExecuteVagrantCommand(t *testing.T) {
 	t.Run(
 		"when there's a command execution error, it executes command with given 'args' and returns parsed machine readable output and error",
 		func(t *testing.T) {
+			t.Parallel()
+
 			client := emptyTestClient(t)
 			isCommandRunCalled := false
 			args := []string{"version"}
@@ -93,11 +147,11 @@ func TestExecuteVagrantCommand(t *testing.T) {
 }
 
 func TestParseMachineReadableOutput(t *testing.T) {
-	t.Parallel()
-
 	t.Run(
 		"with machine readable output in format 'timestamp,target,type,data...' as per https://www.vagrantup.com/docs/cli/machine-readable.html, it returns slice of parsed lines",
 		func(t *testing.T) {
+			t.Parallel()
+
 			client := emptyTestClient(t)
 
 			output := `
@@ -150,6 +204,7 @@ func TestParseMachineReadableOutput(t *testing.T) {
 	t.Run(
 		"with blank output, it returns empty slice of lines",
 		func(t *testing.T) {
+			t.Parallel()
 			client := emptyTestClient(t)
 
 			lines := client.parseMachineReadableOutput("")
@@ -161,6 +216,7 @@ func TestParseMachineReadableOutput(t *testing.T) {
 	t.Run(
 		"with non-machine readable output, that is not blank, it returns empty slice of lines",
 		func(t *testing.T) {
+			t.Parallel()
 			client := emptyTestClient(t)
 
 			// NOTE: Can you think of a more ridiculous output? :)
@@ -188,6 +244,7 @@ tcp        0      0 192.168.13.37:43778     192.121.140.177:80      ESTABLISHED 
 	t.Run(
 		"with blank output, it returns empty slice of lines",
 		func(t *testing.T) {
+			t.Parallel()
 			client := emptyTestClient(t)
 
 			lines := client.parseMachineReadableOutput("")

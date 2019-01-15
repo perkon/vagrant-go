@@ -1,17 +1,48 @@
 package vagrant_go
 
 import (
+	"errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 func TestBoxApiList(t *testing.T) {
-	t.Parallel()
+	t.Run(
+		"with command execution failing and returning an error, it returns an error",
+		func(t *testing.T) {
+			t.Parallel()
+
+			client := emptyTestClient(t)
+
+			isCommandRunCalled := false
+			client.commandRunFunc = func(cmd string, args ...string) (bytes []byte, e error) {
+
+				assert.Equal(t, len(args), 3)
+				assert.Equal(t, args[0], "--machine-readable")
+				assert.Equal(t, args[1], "box")
+				assert.Equal(t, args[2], "list")
+
+				isCommandRunCalled = true
+				return []byte{}, errors.New("fake error")
+			}
+
+			boxAPI := &boxAPI{
+				client: client,
+			}
+
+			boxes, err := boxAPI.List()
+			require.Nil(t, boxes)
+			assert.Contains(t, err.Error(), "command execution failed")
+			assert.True(t, isCommandRunCalled)
+		},
+	)
 
 	t.Run(
 		"with no vagrant boxes available, it returns empty slice",
 		func(t *testing.T) {
+			t.Parallel()
+
 			boxAPI := &boxAPI{
 				client: emptyTestClient(t),
 			}
@@ -26,6 +57,7 @@ func TestBoxApiList(t *testing.T) {
 	t.Run(
 		"with 1 vagrant box available, it returns slice of 1 box",
 		func(t *testing.T) {
+			t.Parallel()
 			boxCommandRunFunc := func(cmd string, args ...string) ([]byte, error) {
 				output := `
 1546015529,,ui,info,my-debian (libvirt%!(VAGRANT_COMMA) 0)
@@ -58,6 +90,7 @@ func TestBoxApiList(t *testing.T) {
 	t.Run(
 		"with 3 vagrant boxes available, it returns slice of 3 boxes",
 		func(t *testing.T) {
+			t.Parallel()
 			boxCommandRunFunc := func(cmd string, args ...string) ([]byte, error) {
 				output := `
 1546015529,,ui,info,my-debian (libvirt%!(VAGRANT_COMMA) 0)

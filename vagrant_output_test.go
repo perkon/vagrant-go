@@ -7,11 +7,11 @@ import (
 )
 
 func TestVagrantOutputLineFromString(t *testing.T) {
-	t.Parallel()
-
 	t.Run(
 		"with machine readable output that contains an ignored line with `metadata`, it returns nil",
 		func(t *testing.T) {
+			t.Parallel()
+
 			output := `1546430404,default,metadata,provider,libvirt`
 
 			line := vagrantOutputLineFromString(output)
@@ -22,6 +22,7 @@ func TestVagrantOutputLineFromString(t *testing.T) {
 	t.Run(
 		"with machine readable output that contains an ignored line with `ui`, it returns nil",
 		func(t *testing.T) {
+			t.Parallel()
 			output := `1546430404,default,metadata,provider,libvirt`
 
 			line := vagrantOutputLineFromString(output)
@@ -32,6 +33,7 @@ func TestVagrantOutputLineFromString(t *testing.T) {
 	t.Run(
 		"with machine readable output that contains an ignored line with `action`, it returns nil",
 		func(t *testing.T) {
+			t.Parallel()
 			output := `1546430404,default,metadata,provider,libvirt`
 
 			line := vagrantOutputLineFromString(output)
@@ -42,6 +44,7 @@ func TestVagrantOutputLineFromString(t *testing.T) {
 	t.Run(
 		"with machine readable output that is a parsable line containing single data field, it returns parsed line",
 		func(t *testing.T) {
+			t.Parallel()
 			output := `1546015529,default,box-name,my-debian`
 
 			line := vagrantOutputLineFromString(output)
@@ -59,6 +62,7 @@ func TestVagrantOutputLineFromString(t *testing.T) {
 	t.Run(
 		"with machine readable output that is a parsable line containing multiple data fields, it returns parsed line",
 		func(t *testing.T) {
+			t.Parallel()
 			output := `1546015529,default,box-name,my-debian`
 
 			line := vagrantOutputLineFromString(output)
@@ -76,6 +80,7 @@ func TestVagrantOutputLineFromString(t *testing.T) {
 	t.Run(
 		"with blank output, it returns nil",
 		func(t *testing.T) {
+			t.Parallel()
 			line := vagrantOutputLineFromString("")
 			assert.Nil(t, line)
 		},
