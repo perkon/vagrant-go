@@ -4,4 +4,9 @@ go:
   - "1.10.x"
   - "1.11.x"
   - master
+# NOTE: Create fake `vagrant` binary
+install:
+  - apt update
+  - apt install -y vagrant
+  - which vagrant
 script: go test -v ./...
