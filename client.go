@@ -77,7 +77,6 @@ func (c *Client) executeVagrantCommand(args ...string) ([]*vagrantOutputLine, er
 func (c *Client) parseMachineReadableOutput(output string) []*vagrantOutputLine {
 	vagrantOutputLines := []*vagrantOutputLine{}
 
-	output = strings.Replace(output, `\n`, "\n", -1)
 	outputLines := strings.Split(output, "\n")
 
 	for _, outputLine := range outputLines {

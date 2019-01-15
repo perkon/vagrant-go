@@ -195,7 +195,7 @@ func TestParseMachineReadableOutput(t *testing.T) {
 			require.Len(t, actualLine.data, 1)
 			// NOTE: It's expected to lose the full actual output due to newlines
 			assert.Equal(t,
-				`The Libvirt domain is running. To stop this machine%!(VAGRANT_COMMA) you can run`,
+				`The Libvirt domain is running. To stop this machine%!(VAGRANT_COMMA) you can run\n'vagrant halt''. To destroy the machine%!(VAGRANT_COMMA) you can run 'vagrant destroy'.`,
 				actualLine.data[0],
 			)
 		},
