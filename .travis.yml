@@ -1,4 +1,4 @@
-sudo: false
+sudo: true
 language: go
 go:
   - "1.10.x"
@@ -6,7 +6,7 @@ go:
   - master
 # NOTE: Create fake `vagrant` binary
 install:
-  - apt update
-  - apt install -y vagrant
+  - sudo apt update
+  - sudo apt install -y vagrant
   - which vagrant
 script: go test -v ./...
