@@ -22,6 +22,16 @@ func TestDefaultUpOptions(t *testing.T) {
 	assert.True(t, options.InstallProvider)
 }
 
+func TestDefaultDestroyOptions(t *testing.T) {
+	t.Parallel()
+
+	options := DefaultDestroyOptions()
+
+	assert.Equal(t, options.WorkingDirectory, "")
+	assert.True(t, options.Force)
+	assert.True(t, options.Parallel)
+}
+
 func TestGlobalAPI_Up(t *testing.T) {
 	t.Run(
 		"with default options and no execution error, it executes command and does not change current working dir before execution",
@@ -129,46 +139,6 @@ func TestGlobalAPI_Up(t *testing.T) {
 			fakeOsExecutor.AssertCalled(t, "Getwd")
 			fakeOsExecutor.AssertCalled(t, "Chdir", fakeOptionsWd)
 			fakeOsExecutor.AssertNotCalled(t, "Chdir", fakeCwd)
-		},
-	)
-
-	t.Run(
-		"with options providing 'workingDir' and an error when changing current working dir to old one, it executes command and does not change current working dir to old one",
-		func(t *testing.T) {
-			t.Parallel()
-			fakeOsExecutor := &fakeOsExecutor{}
-
-			fakeCwd := "/tmp/anotherexample"
-			fakeOsExecutor.On("Getwd").Return(fakeCwd, nil)
-
-			fakeOptionsWd := "/tmp/example"
-			fakeError := errors.New("fake error")
-			fakeOsExecutor.On("Chdir", fakeOptionsWd).Return(nil)
-			fakeOsExecutor.On("Chdir", fakeCwd).Return(fakeError)
-
-			client := emptyTestClient(t)
-			globalAPI := &globalAPI{
-				osExecutor: fakeOsExecutor,
-				client:     client,
-			}
-			client.Global = globalAPI
-			isCommandRunCalled := false
-
-			client.commandRunFunc = func(cmd string, args ...string) (bytes []byte, e error) {
-				isCommandRunCalled = true
-				return []byte{}, nil
-			}
-
-			options := DefaultUpOptions()
-			options.WorkingDirectory = fakeOptionsWd
-
-			err := client.Global.Up(options)
-			assert.Error(t, err, "fake error")
-
-			assert.True(t, isCommandRunCalled)
-			fakeOsExecutor.AssertCalled(t, "Getwd")
-			fakeOsExecutor.AssertCalled(t, "Chdir", fakeOptionsWd)
-			fakeOsExecutor.AssertCalled(t, "Chdir", fakeCwd)
 		},
 	)
 
@@ -659,6 +629,294 @@ func TestGlobalAPI_Up(t *testing.T) {
 			assert.NoError(t, err)
 
 			assert.True(t, isCommandRunCalled)
+		},
+	)
+}
+
+func TestGlobalAPI_Destroy(t *testing.T) {
+	t.Run(
+		"with options providing 'Force' = true, it executes command with '--force'",
+		func(t *testing.T) {
+			t.Parallel()
+
+			fakeOsExecutor := &fakeOsExecutor{}
+
+			client := emptyTestClient(t)
+			globalAPI := &globalAPI{
+				osExecutor: fakeOsExecutor,
+				client:     client,
+			}
+			client.Global = globalAPI
+
+			isCommandRunCalled := false
+			client.commandRunFunc = func(cmd string, args ...string) (bytes []byte, e error) {
+				assert.Equal(t, cmd, client.Config.BinaryName)
+				assert.Len(t, args, 4)
+				assert.Equal(t, args[0], "--machine-readable")
+				assert.Equal(t, args[1], "destroy")
+				assert.Equal(t, args[2], "--force")
+				assert.Equal(t, args[3], "--parallel")
+
+				isCommandRunCalled = true
+				return []byte{}, nil
+			}
+
+			options := DefaultDestroyOptions()
+			options.Force = true
+			err := client.Global.Destroy(options)
+			require.NoError(t, err)
+			assert.True(t, isCommandRunCalled)
+		},
+	)
+
+	t.Run(
+		"with options providing 'Force' = false, it executes command without '--force'",
+		func(t *testing.T) {
+			t.Parallel()
+
+			fakeOsExecutor := &fakeOsExecutor{}
+
+			client := emptyTestClient(t)
+			globalAPI := &globalAPI{
+				osExecutor: fakeOsExecutor,
+				client:     client,
+			}
+			client.Global = globalAPI
+
+			isCommandRunCalled := false
+			client.commandRunFunc = func(cmd string, args ...string) (bytes []byte, e error) {
+				assert.Equal(t, cmd, client.Config.BinaryName)
+				assert.Len(t, args, 3)
+				assert.Equal(t, args[0], "--machine-readable")
+				assert.Equal(t, args[1], "destroy")
+				assert.Equal(t, args[2], "--parallel")
+
+				isCommandRunCalled = true
+				return []byte{}, nil
+			}
+
+			options := DefaultDestroyOptions()
+			options.Force = false
+			err := client.Global.Destroy(options)
+			require.NoError(t, err)
+			assert.True(t, isCommandRunCalled)
+		},
+	)
+
+	t.Run(
+		"with options providing 'Parallel' = true, it executes command with '--parallel'",
+		func(t *testing.T) {
+			t.Parallel()
+
+			fakeOsExecutor := &fakeOsExecutor{}
+
+			client := emptyTestClient(t)
+			globalAPI := &globalAPI{
+				osExecutor: fakeOsExecutor,
+				client:     client,
+			}
+			client.Global = globalAPI
+
+			isCommandRunCalled := false
+			client.commandRunFunc = func(cmd string, args ...string) (bytes []byte, e error) {
+				assert.Equal(t, cmd, client.Config.BinaryName)
+				assert.Len(t, args, 4)
+				assert.Equal(t, args[0], "--machine-readable")
+				assert.Equal(t, args[1], "destroy")
+				assert.Equal(t, args[2], "--force")
+				assert.Equal(t, args[3], "--parallel")
+
+				isCommandRunCalled = true
+				return []byte{}, nil
+			}
+
+			options := DefaultDestroyOptions()
+			options.Parallel = true
+			err := client.Global.Destroy(options)
+			require.NoError(t, err)
+			assert.True(t, isCommandRunCalled)
+		},
+	)
+
+	t.Run(
+		"with options providing 'Parallel' = false, it executes command with '--no-parallel'",
+		func(t *testing.T) {
+			t.Parallel()
+
+			fakeOsExecutor := &fakeOsExecutor{}
+
+			client := emptyTestClient(t)
+			globalAPI := &globalAPI{
+				osExecutor: fakeOsExecutor,
+				client:     client,
+			}
+			client.Global = globalAPI
+
+			isCommandRunCalled := false
+			client.commandRunFunc = func(cmd string, args ...string) (bytes []byte, e error) {
+				assert.Equal(t, cmd, client.Config.BinaryName)
+				assert.Len(t, args, 4)
+				assert.Equal(t, args[0], "--machine-readable")
+				assert.Equal(t, args[1], "destroy")
+				assert.Equal(t, args[2], "--force")
+				assert.Equal(t, args[3], "--no-parallel")
+
+				isCommandRunCalled = true
+				return []byte{}, nil
+			}
+
+			options := DefaultDestroyOptions()
+			options.Parallel = false
+			err := client.Global.Destroy(options)
+			require.NoError(t, err)
+			assert.True(t, isCommandRunCalled)
+		},
+	)
+
+	t.Run(
+		"with default options and no execution error, it executes command and does not change current working dir before execution",
+		func(t *testing.T) {
+			t.Parallel()
+			fakeOsExecutor := &fakeOsExecutor{}
+
+			client := emptyTestClient(t)
+			globalAPI := &globalAPI{
+				osExecutor: fakeOsExecutor,
+				client:     client,
+			}
+			client.Global = globalAPI
+			isCommandRunCalled := false
+
+			client.commandRunFunc = func(cmd string, args ...string) (bytes []byte, e error) {
+				assert.Equal(t, cmd, client.Config.BinaryName)
+				assert.Len(t, args, 4)
+				assert.Equal(t, args[0], "--machine-readable")
+				assert.Equal(t, args[1], "destroy")
+				assert.Equal(t, args[2], "--force")
+				assert.Equal(t, args[3], "--parallel")
+
+				isCommandRunCalled = true
+				return []byte{}, nil
+			}
+
+			options := DefaultDestroyOptions()
+			err := client.Global.Destroy(options)
+			require.NoError(t, err)
+
+			assert.True(t, isCommandRunCalled)
+
+			fakeOsExecutor.AssertNotCalled(t, "Getwd")
+			fakeOsExecutor.AssertNotCalled(t, "Chdir")
+		},
+	)
+
+	t.Run(
+		"with options providing 'workingDir' and an error when retrieving current working dir, it does not execute command and does not change current working dir before execution",
+		func(t *testing.T) {
+			t.Parallel()
+			fakeError := errors.New("fake error")
+			fakeOsExecutor := &fakeOsExecutor{}
+			fakeOsExecutor.On("Getwd").Return("", fakeError)
+
+			client := emptyTestClient(t)
+			globalAPI := &globalAPI{
+				osExecutor: fakeOsExecutor,
+				client:     client,
+			}
+			client.Global = globalAPI
+			isCommandRunCalled := false
+
+			client.commandRunFunc = func(cmd string, args ...string) (bytes []byte, e error) {
+				isCommandRunCalled = true
+				return []byte{}, nil
+			}
+
+			options := DefaultUpOptions()
+			options.WorkingDirectory = "/tmp/example"
+			err := client.Global.Up(options)
+			assert.Error(t, err, "fake error")
+
+			assert.False(t, isCommandRunCalled)
+			fakeOsExecutor.AssertNumberOfCalls(t, "Getwd", 1)
+		},
+	)
+
+	t.Run(
+		"with options providing 'workingDir' and an error when changing current working dir to specified one in options 'workingDir', it does not execute command and does not change current working dir",
+		func(t *testing.T) {
+			t.Parallel()
+			fakeOsExecutor := &fakeOsExecutor{}
+
+			fakeCwd := "/tmp/anotherexample"
+			fakeOsExecutor.On("Getwd").Return(fakeCwd, nil)
+
+			fakeOptionsWd := "/tmp/example"
+			fakeError := errors.New("fake error")
+			fakeOsExecutor.On("Chdir", fakeOptionsWd).Return(fakeError)
+
+			client := emptyTestClient(t)
+			globalAPI := &globalAPI{
+				osExecutor: fakeOsExecutor,
+				client:     client,
+			}
+			client.Global = globalAPI
+			isCommandRunCalled := false
+
+			client.commandRunFunc = func(cmd string, args ...string) (bytes []byte, e error) {
+				isCommandRunCalled = true
+				return []byte{}, nil
+			}
+
+			options := DefaultDestroyOptions()
+			options.WorkingDirectory = fakeOptionsWd
+
+			err := client.Global.Destroy(options)
+			assert.Error(t, err, "fake error")
+
+			assert.False(t, isCommandRunCalled)
+			fakeOsExecutor.AssertCalled(t, "Getwd")
+			fakeOsExecutor.AssertCalled(t, "Chdir", fakeOptionsWd)
+			fakeOsExecutor.AssertNotCalled(t, "Chdir", fakeCwd)
+		},
+	)
+
+	t.Run(
+		"with options providing 'workingDir' and an error when changing current working dir to old one, it executes command and does not change current working dir to old one",
+		func(t *testing.T) {
+			t.Parallel()
+			fakeOsExecutor := &fakeOsExecutor{}
+
+			fakeCwd := "/tmp/anotherexample"
+			fakeOsExecutor.On("Getwd").Return(fakeCwd, nil)
+
+			fakeOptionsWd := "/tmp/example"
+			fakeError := errors.New("fake error")
+			fakeOsExecutor.On("Chdir", fakeOptionsWd).Return(nil)
+			fakeOsExecutor.On("Chdir", fakeCwd).Return(fakeError)
+
+			client := emptyTestClient(t)
+			globalAPI := &globalAPI{
+				osExecutor: fakeOsExecutor,
+				client:     client,
+			}
+			client.Global = globalAPI
+			isCommandRunCalled := false
+
+			client.commandRunFunc = func(cmd string, args ...string) (bytes []byte, e error) {
+				isCommandRunCalled = true
+				return []byte{}, nil
+			}
+
+			options := DefaultDestroyOptions()
+			options.WorkingDirectory = fakeOptionsWd
+
+			err := client.Global.Destroy(options)
+			assert.Error(t, err, "fake error")
+
+			assert.True(t, isCommandRunCalled)
+			fakeOsExecutor.AssertCalled(t, "Getwd")
+			fakeOsExecutor.AssertCalled(t, "Chdir", fakeOptionsWd)
+			fakeOsExecutor.AssertCalled(t, "Chdir", fakeCwd)
 		},
 	)
 }

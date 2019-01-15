@@ -9,6 +9,7 @@ var _ GlobalAPI = (*globalAPI)(nil)
 
 type GlobalAPI interface {
 	Up(options *UpOptions) error
+	Destroy(options *DestroyOptions) error
 }
 
 type globalAPI struct {
@@ -35,6 +36,20 @@ func DefaultUpOptions() *UpOptions {
 		Parallel:         true,
 		Provider:         "",
 		InstallProvider:  true,
+	}
+}
+
+type DestroyOptions struct {
+	WorkingDirectory string
+	Force            bool
+	Parallel         bool
+}
+
+func DefaultDestroyOptions() *DestroyOptions {
+	return &DestroyOptions{
+		WorkingDirectory: "",
+		Force:            true,
+		Parallel:         true,
 	}
 }
 
@@ -73,6 +88,45 @@ func (api *globalAPI) Up(options *UpOptions) error {
 		args = append(args, "--install-provider")
 	} else {
 		args = append(args, "--no-install-provider")
+	}
+
+	if len(options.WorkingDirectory) > 0 {
+		oldWorkingDir, err := api.osExecutor.Getwd()
+		if err != nil {
+			return err
+		}
+
+		err = api.osExecutor.Chdir(options.WorkingDirectory)
+		if err != nil {
+			return err
+		}
+
+		_, err = api.client.executeVagrantCommand(args...)
+		if err != nil {
+			return err
+		}
+
+		err = api.osExecutor.Chdir(oldWorkingDir)
+		return err
+	}
+
+	_, err := api.client.executeVagrantCommand(args...)
+	return err
+}
+
+func (api *globalAPI) Destroy(options *DestroyOptions) error {
+	args := []string{
+		"destroy",
+	}
+
+	if options.Force {
+		args = append(args, "--force")
+	}
+
+	if options.Parallel {
+		args = append(args, "--parallel")
+	} else {
+		args = append(args, "--no-parallel")
 	}
 
 	if len(options.WorkingDirectory) > 0 {
