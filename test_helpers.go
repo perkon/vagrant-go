@@ -1,6 +1,7 @@
 package vagrant_go
 
 import (
+	"github.com/stretchr/testify/mock"
 	"testing"
 )
 
@@ -32,4 +33,18 @@ func emptyTestClient(t *testing.T) *Client {
 	}
 
 	return client
+}
+
+type fakeOsExecutor struct {
+	mock.Mock
+}
+
+func (f *fakeOsExecutor) Getwd() (string, error) {
+	args := f.Called()
+	return args.String(0), args.Error(1)
+}
+
+func (f *fakeOsExecutor) Chdir(dir string) error {
+	args := f.Called(dir)
+	return args.Error(0)
 }

@@ -1,6 +1,7 @@
 package vagrant_go
 
 import (
+	"errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -20,6 +21,73 @@ func TestNewClient(t *testing.T) {
 			assert.NotNil(t, client.commandRunFunc)
 
 			assert.NotNil(t, client.Box)
+			assert.NotNil(t, client.Global)
+		},
+	)
+}
+
+func TestExecuteVagrantCommand(t *testing.T) {
+	t.Parallel()
+
+	t.Run(
+		"when there's no command execution error, it executes command with given 'args' and returns parsed machine readable output and no error",
+		func(t *testing.T) {
+			client := emptyTestClient(t)
+			isCommandRunCalled := false
+			args := []string{"version"}
+
+			fakeOutput := "1546430404,default,provider-name,libvirt"
+			client.commandRunFunc = func(cmd string, args ...string) (bytes []byte, e error) {
+				assert.Equal(t, cmd, client.Config.BinaryName)
+				assert.Len(t, args, 2)
+				isCommandRunCalled = true
+				return []byte(fakeOutput), nil
+			}
+
+			outputLines, err := client.executeVagrantCommand(args...)
+			require.NoError(t, err)
+
+			assert.Equal(t, len(outputLines), 1)
+			assert.Equal(t, outputLines[0].timestamp, "1546430404")
+			assert.Equal(t, outputLines[0].target, "default")
+			assert.Equal(t, outputLines[0].kind, "provider-name")
+			assert.Equal(t, len(outputLines[0].data), 1)
+			assert.Equal(t, outputLines[0].data[0], "libvirt")
+
+			assert.True(t, isCommandRunCalled)
+		},
+	)
+
+	t.Run(
+		"when there's a command execution error, it executes command with given 'args' and returns parsed machine readable output and error",
+		func(t *testing.T) {
+			client := emptyTestClient(t)
+			isCommandRunCalled := false
+			args := []string{"version"}
+
+			fakeOutput := "1546430404,default,provider-name,libvirt"
+			fakeErrorMessage := "fakeCommandRunError"
+
+			client.commandRunFunc = func(cmd string, args ...string) (bytes []byte, e error) {
+				assert.Equal(t, cmd, client.Config.BinaryName)
+				assert.Len(t, args, 2)
+				assert.Equal(t, args[0], "--machine-readable")
+				assert.Equal(t, args[1], "version")
+				isCommandRunCalled = true
+				return []byte(fakeOutput), errors.New(fakeErrorMessage)
+			}
+
+			outputLines, err := client.executeVagrantCommand(args...)
+			require.Error(t, err, fakeErrorMessage)
+
+			assert.Equal(t, len(outputLines), 1)
+			assert.Equal(t, outputLines[0].timestamp, "1546430404")
+			assert.Equal(t, outputLines[0].target, "default")
+			assert.Equal(t, outputLines[0].kind, "provider-name")
+			assert.Equal(t, len(outputLines[0].data), 1)
+			assert.Equal(t, outputLines[0].data[0], "libvirt")
+
+			assert.True(t, isCommandRunCalled)
 		},
 	)
 }

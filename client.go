@@ -8,7 +8,9 @@ import (
 type Client struct {
 	Config         *Config
 	commandRunFunc func(cmd string, args ...string) ([]byte, error)
+	osExecutor     OsExecutor
 	Box            BoxAPI
+	Global         GlobalAPI
 }
 
 func NewClient(
@@ -48,6 +50,11 @@ func NewClient(
 
 	client.Box = &boxAPI{
 		client: client,
+	}
+
+	client.Global = &globalAPI{
+		client:     client,
+		osExecutor: &osExecutor{},
 	}
 
 	return client, nil
